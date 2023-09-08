@@ -1,19 +1,17 @@
 package locks.semaphore;
 
-import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Restaurant extends Thread {
-    private Semaphore full;
-    private Semaphore empty;
-    private Lock lock = new ReentrantLock();
-    private DHLWareHouse wareHouse;
+    private final Semaphore full;
+    private final Semaphore empty;
+    private final Lock lock = new ReentrantLock(true);
+    private final WareHouse wareHouse;
     private int sold = 0;
     private volatile double revenue = 0;
-    public Restaurant(Semaphore full, Semaphore empty, DHLWareHouse wareHouse) {
+    public Restaurant(Semaphore full, Semaphore empty, WareHouse wareHouse) {
         this.full = full;
         this.empty = empty;
         this.wareHouse = wareHouse;
@@ -27,10 +25,11 @@ public class Restaurant extends Thread {
                 this.selling();
                 empty.release();
             } catch (InterruptedException e) {
-                System.out.printf("\"%s\", has sold %d bottles of beer. Earned $%.2fUSD of revenue\n", this.getName(), this.getSold(), this.revenue);
+                System.out.printf("\"%s\", has sold %d bottles of beer. Earned $%.2fUSD of revenue\n",
+                        this.getName(), this.getSold(), this.getRevenue());
                 break;
             }
-            if (Thread.currentThread().isInterrupted()) {
+            if (this.isInterrupted()) {
                 break;
             }
         }
@@ -44,23 +43,23 @@ public class Restaurant extends Thread {
                 try {
                     Bottle bottle = wareHouse.getBottle();
                     if (bottle == null) {
-
-                        if (timesToTry == 0) {
-                            System.out.println("Getting more beer, wait...");
-                        }
-                        timesToTry--;
+                        sleep(100);
                         continue;
                     }
                     System.out.println("Selling " + bottle);
                     increment(bottle);
                     System.out.println(this.getName() + " sold:: " + getSold());
+                    sleep(200);
                     break;
                 } finally {
                     lock.unlock();
                 }
             }
+            if (timesToTry == 0) {
+                System.out.println("Getting more beer, wait...");
+            }
+            timesToTry--;
         }
-
     }
 
     public int getSold() {
@@ -68,13 +67,16 @@ public class Restaurant extends Thread {
     }
 
     private void increment(Bottle bottle) {
+        double price = bottle.getPrice();
         Lock l = getLock();
         l.lock();
         this.sold += 1;
-        this.revenue += bottle.getPrice();
+        revenue += price;
         l.unlock();
     }
-
+    private double getRevenue(){
+        return this.revenue;
+    }
     private Lock getLock() {
         return this.lock;
     }

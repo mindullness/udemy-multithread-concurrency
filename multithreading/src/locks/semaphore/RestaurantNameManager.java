@@ -5,11 +5,11 @@ import java.util.*;
 public class RestaurantNameManager {
     private static Map<Integer, RestaurantBrand> list;
     private static List<Integer> assignedList;
-    private Random random;
+    private final Random random;
 
     public RestaurantNameManager() {
         random = new Random();
-        this.list = new HashMap<>();
+        list = new HashMap<>();
         assignedList = new ArrayList<>();
         int start = 0;
         for (RestaurantBrand name : RestaurantBrand.values()) {
