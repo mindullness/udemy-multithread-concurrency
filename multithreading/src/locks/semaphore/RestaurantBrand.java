@@ -10,7 +10,7 @@ public enum RestaurantBrand {
     BIA_CRAFT("Bia Craft"),
     HEART_OF_DARKNESS("Heart Of Darkness");
 
-    private String name;
+    private final String name;
     RestaurantBrand(String s) {
         this.name = s;
     }

@@ -6,12 +6,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Brewery extends Thread {
-    private Semaphore full;
-    private Semaphore empty;
-    private DHLWareHouse wareHouse;
-    private Lock breweryLock = new ReentrantLock(true);
+    private final Semaphore full;
+    private final Semaphore empty;
+    private final WareHouse wareHouse;
+    private final Lock breweryLock = new ReentrantLock(true);
 
-    public Brewery(Semaphore full, Semaphore empty, DHLWareHouse wareHouse) {
+    public Brewery(Semaphore full, Semaphore empty, WareHouse wareHouse) {
         this.full = full;
         this.empty = empty;
         this.wareHouse = wareHouse;
@@ -20,29 +20,23 @@ public class Brewery extends Thread {
     @Override
     public void run() {
         while (true) {
-            Bottle bottle = null;
             try {
+                Bottle bottle;
                 bottle = produce();
                 empty.acquire();
-            } catch (InterruptedException e) {
-                System.out.println("Producing interrupted");
-                break;
-            }
-            breweryLock.lock();
-            try {
+                breweryLock.lock();
                 System.out.println(this.getName() + " is making beer ... 🍺");
                 if (wareHouse.addBottle(bottle)) {
-                    sleep(500);
-                    System.out.println("Added more beer");
+                    System.out.printf("Stored currently:: %d bottles%n", wareHouse.getQuantity());
                 } else {
                     System.out.println("Failed to add more beer");
                 }
+                breweryLock.unlock();
+                full.release();
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
             } catch (InterruptedException e) {
-                break;
-            }
-            breweryLock.unlock();
-            full.release();
-            if (Thread.currentThread().isInterrupted()) {
                 break;
             }
         }
@@ -61,6 +55,7 @@ public class Brewery extends Thread {
             bottle.setIpa((random.nextInt(8)) + random.nextFloat());
             bottle.setPrice((Math.floor(Math.random() * (max - min + 1) + min)) + random.nextDouble());
             bottle.setSize(Arrays.asList(9, 12, 14).get(random.nextInt(3)));
+            sleep(150);
             return bottle;
         }
     }
