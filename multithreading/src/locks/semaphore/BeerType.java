@@ -9,7 +9,7 @@ public enum BeerType {
     STOUT("Stout"),
     PORTER("Porter"),
     PILSNER("Pilsner");
-    private String type;
+    private final String type;
 
     BeerType(String s) {
         this.type = s;
